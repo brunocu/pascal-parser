@@ -10,6 +10,11 @@ char* outfilename;
 
 int line = 1;
 int col = 1;
+
+#define TOKEN(t)    {                                                                               \
+                        fprintf(yyout, "%s:%d.%d:\t%s \'%s\'\n", infilename, line, col, t, yytext); \
+                        col += yyleng;                                                              \
+                    }
 %}
 %option case-insensitive
 %option array
@@ -18,6 +23,7 @@ int col = 1;
 LETRA   [A-Za-z]
 DIGITO  [0-9]
 NOCERO  [1-9]
+ENTERO  ({NOCERO}{DIGITO}*)
 %%
 "while"     |
 "var"       |
@@ -42,12 +48,13 @@ NOCERO  [1-9]
 "boolean"   |
 "begin"     |
 "array"     |
-"and"       |
+"and"       TOKEN("keyword");
+
 "writeln"   |
 "write"     |
 "readln"    |
-"read"      |
-"E"         |
+"read"      TOKEN("instruccion");
+
 "$"         |
 ">"         |
 "="         |
@@ -64,22 +71,23 @@ NOCERO  [1-9]
 ")"         |
 "("         |
 "."         |
+".."        |
 ":="        |
 ":"         |
 ";"         |
 ","         |
-"-"         |
-{LETRA}     |
-{DIGITO}    {
-    fprintf(yyout, "%s:%d.%d:\t\"%s\"\n", infilename, line, col, yytext);
-    col += yyleng;
-}
+"-"         TOKEN("punct");
 
-[[:blank:]]         ++col;
-\n|\r\n     {
-                ++line;
-                col = 1;
-            }
+{LETRA}({DIGITO}|{LETRA})*  TOKEN("identificador");
+"\""[[:alnum:]]*"\""        TOKEN("cadena");
+("+"|"-")?{ENTERO}          TOKEN("entero");
+("+"|"-")?{ENTERO}"."{ENTERO}("e"("+"|"-")?{ENTERO})?   TOKEN("real");
+
+[[:blank:]]+    col += yyleng;
+\n|\r\n         {
+                    ++line;
+                    col = 1;
+                }
 
 %%
 /* User Code */
@@ -91,11 +99,13 @@ int main(int argc, char *argv[])
         yyin = fopen(infilename, "r");
         if (!yyin)
             return(EINVAL);
+        printf("Reconociendo: %s\n", infilename);
         int infilelen = strlen(infilename);
         outfilename = malloc((infilelen + 8) * sizeof(char));
         strcpy(outfilename, infilename);
         strcpy(outfilename + infilelen, ".tokens");
         yyout = fopen(outfilename, "w");
+        printf("Generando: %s\n", outfilename);
     }
     else
         return(1);
