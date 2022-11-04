@@ -4,7 +4,7 @@
 extern int yylex(void);
 int yyerror(char const *s);
 %}
-%token PROGRAM IDENTIFICADOR BEGIN END VAR CONST ENTERO OF 
+%token PROGRAM IDENTIFICADOR PBEGIN END VAR CONST ENTERO OF 
 INTEGER REAL STRING BOOLEAN WHILE DO FOR TO DOWNTO READ READLN WRITE WRITELN CADENA
 IF THEN ELSE TWO_DOTS ASSIGNMENT OR AND NOT FUNCTION PROCEDURE ARRAY
 
@@ -69,7 +69,7 @@ parametros_lista:
     | parametros_lista ';' identificador_lista ':' tipo
     ;
 instruccion_compuesta:
-    BEGIN instrucciones_opcionales END
+    PBEGIN instrucciones_opcionales END
     ;
 instrucciones_opcionales:
     instrucciones_lista 

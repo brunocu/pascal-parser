@@ -12,10 +12,6 @@ char* outfilename;
 int line = 1;
 int col = 1;
 
-#define TOKEN(t)    {                                                                               \
-                        fprintf(yyout, "%s:%d.%d:\t%s \'%s\'\n", infilename, line, col, t, yytext); \
-                        col += yyleng;                                                              \
-                    }
 %}
 %option case-insensitive
 %option array
@@ -27,7 +23,7 @@ NOCERO  [1-9]
 ENTERO  ({NOCERO}{DIGITO}*)
 %%
 "program"   return PROGRAM;
-"begin"     return BEGIN;
+"begin"     return PBEGIN;
 "end"       return END;
 "var"       return VAR;
 "const"     return CONST;
@@ -82,9 +78,7 @@ ENTERO  ({NOCERO}{DIGITO}*)
 
 {LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
 "\""[[:alnum:]$&/+*%=:{}>\<:;\[\],.#-]*"\""        return CADENA;
-{ENTERO}                    return ENTERO;  /* colision ? */
-("+"|"-")?{ENTERO}          TOKEN("entero");
-("+"|"-")?{ENTERO}"."{ENTERO}("e"("+"|"-")?{ENTERO})?   TOKEN("real");
+{ENTERO}                    return ENTERO;
 
 [[:blank:]]+    col += yyleng;
 \n|\r\n         {
