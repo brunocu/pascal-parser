@@ -41,12 +41,12 @@ MACRO(YACC_FILE _filepath)
     )
 ENDMACRO(YACC_FILE)
 
-LEX_FILE(src/lexer.lex)
-SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/lexer.lex.c GENERATED)
 YACC_FILE(src/parser.y)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/parser.tab.c GENERATED)
+LEX_FILE(src/lexer.lex)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/lexer.lex.c GENERATED)
 
 add_executable(parser
-    lexer.lex.c
     parser.tab.c
+    lexer.lex.c
 )

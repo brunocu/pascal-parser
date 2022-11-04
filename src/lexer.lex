@@ -31,33 +31,33 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "end"       return END;
 "var"       return VAR;
 "const"     return CONST;
-"while"     |
-"to"        |
-"then"      |
-"string"    |
-"real"      |
-"procedure" |
-"or"        |
-"of"        |
-"not"       |
-"integer"   |
-"if"        |
-"function"  |
-"for"       |
-"else"      |
-"downto"    |
-"do"        |
-"boolean"   |
-"array"     |
-"and"       TOKEN("keyword");
+"while"     return WHILE;
+"to"        return TO;
+"then"      return THEN;
+"string"    return STRING;
+"real"      return REAL;
+"procedure" return PROCEDURE;
+"or"        return OR;
+"of"        return OF;
+"not"       return NOT;
+"integer"   return INTEGER;
+"if"        return IF;
+"function"  return FUNCTION;
+"for"       return FOR;
+"else"      return ELSE;
+"downto"    return DOWNTO;
+"do"        return DO;
+"boolean"   return BOOLEAN;
+"array"     return ARRAY;
+"and"       return AND;
 
-"writeln"   |
-"write"     |
-"readln"    |
-"read"      TOKEN("instruccion");
+"writeln"   return WRITELN;
+"write"     return WRITE;
+"readln"    return READLN;
+"read"      return READ;
 
-".."        |
-":="        { /* que valor darle a cadenas de dos ? */ }
+".."        return TWO_DOTS;
+":="        return ASSIGNMENT;
 
 "$"         |
 ">"         |
@@ -81,7 +81,7 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "-"         return *yytext;
 
 {LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
-"\""[[:alnum:]]*"\""        TOKEN("cadena");
+"\""[[:alnum:]$&/+*%=:{}>\<:;\[\],.#-]*"\""        return CADENA;
 {ENTERO}                    return ENTERO;  /* colision ? */
 ("+"|"-")?{ENTERO}          TOKEN("entero");
 ("+"|"-")?{ENTERO}"."{ENTERO}("e"("+"|"-")?{ENTERO})?   TOKEN("real");
