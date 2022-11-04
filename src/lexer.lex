@@ -27,8 +27,11 @@ NOCERO  [1-9]
 ENTERO  ({NOCERO}{DIGITO}*)
 %%
 "program"   return PROGRAM;
+"begin"     return BEGIN;
+"end"       return END;
+"var"       return VAR;
+"const"     return CONST;
 "while"     |
-"var"       |
 "to"        |
 "then"      |
 "string"    |
@@ -41,13 +44,10 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "if"        |
 "function"  |
 "for"       |
-"end"       |
 "else"      |
 "downto"    |
 "do"        |
-"const"     |
 "boolean"   |
-"begin"     |
 "array"     |
 "and"       TOKEN("keyword");
 
@@ -82,6 +82,7 @@ ENTERO  ({NOCERO}{DIGITO}*)
 
 {LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
 "\""[[:alnum:]]*"\""        TOKEN("cadena");
+{ENTERO}                    return ENTERO;  /* colision ? */
 ("+"|"-")?{ENTERO}          TOKEN("entero");
 ("+"|"-")?{ENTERO}"."{ENTERO}("e"("+"|"-")?{ENTERO})?   TOKEN("real");
 

@@ -4,7 +4,7 @@
 extern int yylex(void);
 int yyerror(char const *s);
 %}
-%token PROGRAM IDENTIFICADOR
+%token PROGRAM IDENTIFICADOR BEGIN END VAR CONST ENTERO
 
 %%
 programa:
@@ -13,6 +13,31 @@ programa:
 identificador_lista:
     IDENTIFICADOR
     | identificador_lista ',' IDENTIFICADOR
+    ;
+declaraciones:
+    declaraciones_variables
+    | declaraciones_constantes
+    ;
+declaraciones_variables:
+    declaraciones_variables VAR identificador_lista ':' tipo ';'
+    | /* empty */
+    ;
+tipo:
+    estandar_tipo
+    | ARRAY '[' ENTERO ".." ENTERO ']' OF estandar_tipo
+    ;
+declaraciones_constantes:
+    declaraciones_constantes CONST IDENTIFICADOR '=' constante_entera ';'
+    | declaraciones_constantes CONST IDENTIFICADOR '=' constante_real ';'
+    | declaraciones_constantes CONST IDENTIFICADOR '=' constante_cadena ';'
+    | /* empty */
+    ;
+subprograma_declaraciones:
+    subprograma_declaraciones subprograma_declaracion ';'
+    | /* empty */
+    ;
+instruccion_compuesta:
+    BEGIN instrucciones_opcionales END
     ;
 %%
 
