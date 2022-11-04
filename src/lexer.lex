@@ -1,4 +1,5 @@
 %{
+#include "parser.tab.h"
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -25,13 +26,13 @@ DIGITO  [0-9]
 NOCERO  [1-9]
 ENTERO  ({NOCERO}{DIGITO}*)
 %%
+"program"   return PROGRAM;
 "while"     |
 "var"       |
 "to"        |
 "then"      |
 "string"    |
 "real"      |
-"program"   |
 "procedure" |
 "or"        |
 "of"        |
@@ -55,6 +56,9 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "readln"    |
 "read"      TOKEN("instruccion");
 
+".."        |
+":="        { /* que valor darle a cadenas de dos ? */ }
+
 "$"         |
 ">"         |
 "="         |
@@ -71,14 +75,12 @@ ENTERO  ({NOCERO}{DIGITO}*)
 ")"         |
 "("         |
 "."         |
-".."        |
-":="        |
 ":"         |
 ";"         |
 ","         |
-"-"         TOKEN("punct");
+"-"         return *yytext;
 
-{LETRA}({DIGITO}|{LETRA})*  TOKEN("identificador");
+{LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
 "\""[[:alnum:]]*"\""        TOKEN("cadena");
 ("+"|"-")?{ENTERO}          TOKEN("entero");
 ("+"|"-")?{ENTERO}"."{ENTERO}("e"("+"|"-")?{ENTERO})?   TOKEN("real");
