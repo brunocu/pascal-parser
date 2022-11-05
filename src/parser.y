@@ -1,5 +1,6 @@
 %{
 #include <stdlib.h>
+#include <stdio.h>
 
 extern int yylex(void);
 int yyerror(char const *s);
@@ -189,6 +190,7 @@ exponente:
 
 int yyerror(char const *s)
 {
+    printf("Error: %s\n", s);
     exit(1);
     return 0;
 }

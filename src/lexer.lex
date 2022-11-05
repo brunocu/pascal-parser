@@ -2,20 +2,12 @@
 #include "parser.tab.h"
 #include <stdio.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-
-char* infilename;
-char* outfilename;
-
-
-int line = 1;
-int col = 1;
 
 %}
 %option case-insensitive
 %option array
 %option noyywrap
+%option nodefault
 
 LETRA   [A-Za-z]
 DIGITO  [0-9]
@@ -63,7 +55,6 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "%"         |
 "#"         |
 "&"         |
-"\""        |
 "/"         |
 "*"         |
 "]"         |
@@ -76,15 +67,12 @@ ENTERO  ({NOCERO}{DIGITO}*)
 ","         |
 "-"         return *yytext;
 
+"\""[][#$%&*+,./:;<=>{}[:alnum:][:blank:]-]*"\""    return CADENA;
 {LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
-"\""[[:alnum:]$&/+*%=:{}>\<:;\[\],.#-]*"\""        return CADENA;
 {ENTERO}                    return ENTERO;
 
-[[:blank:]]+    col += yyleng;
-\n|\r\n         {
-                    ++line;
-                    col = 1;
-                }
+[[:blank:]]+    /**/
+\n|\r\n         /**/
 
 %%
 /* User Code */
@@ -92,20 +80,14 @@ int main(int argc, char *argv[])
 {
     if (argc > 1)
     {
-        infilename = strdup(argv[1]);
-        yyin = fopen(infilename, "r");
+        yyin = fopen(argv[1], "r");
         if (!yyin)
             return(EINVAL);
-        printf("Reconociendo: %s\n", infilename);
-        int infilelen = strlen(infilename);
-        outfilename = malloc((infilelen + 8) * sizeof(char));
-        strcpy(outfilename, infilename);
-        strcpy(outfilename + infilelen, ".tokens");
-        yyout = fopen(outfilename, "w");
-        printf("Generando: %s\n", outfilename);
+        printf("Analizando: %s\n", argv[1]);
     }
     else
         return(1);
 
-    yylex();
+    yyparse();
+    puts("Entrada válida");
 }
