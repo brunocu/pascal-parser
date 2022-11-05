@@ -1,59 +1,51 @@
 %{
+#include "parser.tab.h"
 #include <stdio.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
 
-char* infilename;
-char* outfilename;
-
-
-int line = 1;
-int col = 1;
-
-#define TOKEN(t)    {                                                                               \
-                        fprintf(yyout, "%s:%d.%d:\t%s \'%s\'\n", infilename, line, col, t, yytext); \
-                        col += yyleng;                                                              \
-                    }
 %}
 %option case-insensitive
 %option array
 %option noyywrap
+%option nodefault
 
 LETRA   [A-Za-z]
 DIGITO  [0-9]
 NOCERO  [1-9]
 ENTERO  ({NOCERO}{DIGITO}*)
 %%
-"while"     |
-"var"       |
-"to"        |
-"then"      |
-"string"    |
-"real"      |
-"program"   |
-"procedure" |
-"or"        |
-"of"        |
-"not"       |
-"integer"   |
-"if"        |
-"function"  |
-"for"       |
-"end"       |
-"else"      |
-"downto"    |
-"do"        |
-"const"     |
-"boolean"   |
-"begin"     |
-"array"     |
-"and"       TOKEN("keyword");
+"program"   return PROGRAM;
+"begin"     return PBEGIN;
+"end"       return END;
+"var"       return VAR;
+"const"     return CONST;
+"while"     return WHILE;
+"to"        return TO;
+"then"      return THEN;
+"string"    return STRING;
+"real"      return REAL;
+"procedure" return PROCEDURE;
+"or"        return OR;
+"of"        return OF;
+"not"       return NOT;
+"integer"   return INTEGER;
+"if"        return IF;
+"function"  return FUNCTION;
+"for"       return FOR;
+"else"      return ELSE;
+"downto"    return DOWNTO;
+"do"        return DO;
+"boolean"   return BOOLEAN;
+"array"     return ARRAY;
+"and"       return AND;
 
-"writeln"   |
-"write"     |
-"readln"    |
-"read"      TOKEN("instruccion");
+"writeln"   return WRITELN;
+"write"     return WRITE;
+"readln"    return READLN;
+"read"      return READ;
+
+".."        return TWO_DOTS;
+":="        return ASSIGNMENT;
 
 "$"         |
 ">"         |
@@ -63,7 +55,6 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "%"         |
 "#"         |
 "&"         |
-"\""        |
 "/"         |
 "*"         |
 "]"         |
@@ -71,23 +62,17 @@ ENTERO  ({NOCERO}{DIGITO}*)
 ")"         |
 "("         |
 "."         |
-".."        |
-":="        |
 ":"         |
 ";"         |
 ","         |
-"-"         TOKEN("punct");
+"-"         return *yytext;
 
-{LETRA}({DIGITO}|{LETRA})*  TOKEN("identificador");
-"\""[[:alnum:]]*"\""        TOKEN("cadena");
-("+"|"-")?{ENTERO}          TOKEN("entero");
-("+"|"-")?{ENTERO}"."{ENTERO}("e"("+"|"-")?{ENTERO})?   TOKEN("real");
+"\""[][#$%&*+,./:;<=>{}[:alnum:][:blank:]-]*"\""    return CADENA;
+{LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
+{ENTERO}                    return ENTERO;
 
-[[:blank:]]+    col += yyleng;
-\n|\r\n         {
-                    ++line;
-                    col = 1;
-                }
+[[:blank:]]+    /**/
+\n|\r\n         /**/
 
 %%
 /* User Code */
@@ -95,20 +80,14 @@ int main(int argc, char *argv[])
 {
     if (argc > 1)
     {
-        infilename = strdup(argv[1]);
-        yyin = fopen(infilename, "r");
+        yyin = fopen(argv[1], "r");
         if (!yyin)
             return(EINVAL);
-        printf("Reconociendo: %s\n", infilename);
-        int infilelen = strlen(infilename);
-        outfilename = malloc((infilelen + 8) * sizeof(char));
-        strcpy(outfilename, infilename);
-        strcpy(outfilename + infilelen, ".tokens");
-        yyout = fopen(outfilename, "w");
-        printf("Generando: %s\n", outfilename);
+        printf("Analizando: %s\n", argv[1]);
     }
     else
         return(1);
 
-    yylex();
+    yyparse();
+    puts("Entrada válida");
 }

@@ -11,6 +11,13 @@ if(LEX_EXE STREQUAL "LEX_EXE-NOTFOUND")
     message(FATAL_ERROR "flex executable not found")
 endif(LEX_EXE STREQUAL "LEX_EXE-NOTFOUND")
 
+find_program(YACC_EXE
+    bison
+)
+if(YACC_EXE STREQUAL "YACC_EXE-NOTFOUND")
+    message(FATAL_ERROR "bison executable not found")
+endif(YACC_EXE STREQUAL "YACC_EXE-NOTFOUND")
+
 # lex source file macro
 MACRO(LEX_FILE _filepath)
     GET_FILENAME_COMPONENT(_filename ${_filepath} NAME)
@@ -22,7 +29,24 @@ MACRO(LEX_FILE _filepath)
         DEPENDS ${_filepath} )
 ENDMACRO(LEX_FILE)
 
+# yacc source file macro
+MACRO(YACC_FILE _filepath)
+    GET_FILENAME_COMPONENT(_basename ${_filepath} NAME_WE)
+    ADD_CUSTOM_COMMAND(
+        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.tab.c
+                ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.tab.h
+        COMMAND ${YACC_EXE} -d
+                ${CMAKE_CURRENT_SOURCE_DIR}/${_filepath}
+        DEPENDS ${_filepath}
+    )
+ENDMACRO(YACC_FILE)
+
+YACC_FILE(src/parser.y)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/parser.tab.c GENERATED)
 LEX_FILE(src/lexer.lex)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/lexer.lex.c GENERATED)
 
-add_executable(parser lexer.lex.c)
+add_executable(parser
+    parser.tab.c
+    lexer.lex.c
+)
