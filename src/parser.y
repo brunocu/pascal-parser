@@ -1,13 +1,9 @@
 %{
-#define YYDEBUG 1
 #include <stdlib.h>
-#include <stdio.h>
 
 extern int yylex(void);
 int yyerror(char const *s);
 %}
-%verbose
-%define parse.trace
 %token PROGRAM IDENTIFICADOR PBEGIN END VAR CONST ENTERO OF 
 INTEGER REAL STRING BOOLEAN WHILE DO FOR TO DOWNTO READ READLN WRITE WRITELN CADENA
 IF THEN ELSE TWO_DOTS ASSIGNMENT OR AND NOT FUNCTION PROCEDURE ARRAY
@@ -193,7 +189,6 @@ exponente:
 
 int yyerror(char const *s)
 {
-    puts("Entrada no válida");
     exit(1);
     return 0;
 }

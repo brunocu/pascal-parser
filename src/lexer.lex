@@ -16,7 +16,6 @@ int col = 1;
 %option case-insensitive
 %option array
 %option noyywrap
-%option debug
 
 LETRA   [A-Za-z]
 DIGITO  [0-9]
@@ -77,8 +76,8 @@ ENTERO  ({NOCERO}{DIGITO}*)
 ","         |
 "-"         return *yytext;
 
-"\""[][:alnum:]$&/+*%=:{}>\<:;[,.#-]*"\""        return CADENA;
 {LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
+"\""[[:alnum:]$&/+*%=:{}>\<:;\[\],.#-]*"\""        return CADENA;
 {ENTERO}                    return ENTERO;
 
 [[:blank:]]+    col += yyleng;
@@ -97,12 +96,16 @@ int main(int argc, char *argv[])
         yyin = fopen(infilename, "r");
         if (!yyin)
             return(EINVAL);
-        printf("Analizando: %s\n", infilename);
+        printf("Reconociendo: %s\n", infilename);
+        int infilelen = strlen(infilename);
+        outfilename = malloc((infilelen + 8) * sizeof(char));
+        strcpy(outfilename, infilename);
+        strcpy(outfilename + infilelen, ".tokens");
+        yyout = fopen(outfilename, "w");
+        printf("Generando: %s\n", outfilename);
     }
     else
         return(1);
 
-    yydebug = 1;
-    yyparse();
-    puts("Entrada válida");
+    yylex();
 }
