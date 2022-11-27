@@ -22,22 +22,22 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "while"     return WHILE;
 "to"        return TO;
 "then"      return THEN;
-"string"    return STRING;
-"real"      return REAL;
+"string"    return TOK_STRING;
+"real"      return TOK_REAL;
 "procedure" return PROCEDURE;
-"or"        return OR;
+"or"        return TOK_OR;
 "of"        return OF;
 "not"       return NOT;
-"integer"   return INTEGER;
+"integer"   return TOK_INTEGER;
 "if"        return IF;
 "function"  return FUNCTION;
 "for"       return FOR;
 "else"      return ELSE;
 "downto"    return DOWNTO;
 "do"        return DO;
-"boolean"   return BOOLEAN;
+"boolean"   return TOK_BOOLEAN;
 "array"     return ARRAY;
-"and"       return AND;
+"and"       return TOK_AND;
 
 "writeln"   return WRITELN;
 "write"     return WRITE;
@@ -68,7 +68,7 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "-"         return *yytext;
 
 "\""[][#$%&*+,./:;<=>{}[:alnum:][:blank:]-]*"\""    return CADENA;
-{LETRA}({DIGITO}|{LETRA})*  return IDENTIFICADOR;
+{LETRA}({DIGITO}|{LETRA})*  return TOK_IDENTIFICADOR;
 {ENTERO}                    return ENTERO;
 
 [[:blank:]]+    /**/
@@ -76,18 +76,3 @@ ENTERO  ({NOCERO}{DIGITO}*)
 
 %%
 /* User Code */
-int main(int argc, char *argv[])
-{
-    if (argc > 1)
-    {
-        yyin = fopen(argv[1], "r");
-        if (!yyin)
-            return(EINVAL);
-        printf("Analizando: %s\n", argv[1]);
-    }
-    else
-        return(1);
-
-    yyparse();
-    puts("Entrada válida");
-}
