@@ -23,7 +23,9 @@ MACRO(LEX_FILE _filepath)
     GET_FILENAME_COMPONENT(_filename ${_filepath} NAME)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.c
-        COMMAND ${LEX_EXE}
+                ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.h
+        COMMAND ${LEX_EXE} -L
+                --header-file=${_filename}.h
                 -o${_filename}.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filepath}
         DEPENDS ${_filepath} )
@@ -35,7 +37,8 @@ MACRO(YACC_FILE _filepath)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.tab.c
                 ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.tab.h
-        COMMAND ${YACC_EXE} -d
+        COMMAND ${YACC_EXE} -l
+                -d
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filepath}
         DEPENDS ${_filepath}
     )
@@ -45,8 +48,11 @@ YACC_FILE(src/parser.y)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/parser.tab.c GENERATED)
 LEX_FILE(src/lexer.lex)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/lexer.lex.c GENERATED)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} src)
 
 add_executable(parser
+    src/main.c
     parser.tab.c
     lexer.lex.c
+    src/tree.c
 )
