@@ -1,8 +1,11 @@
 %{
 #include "parser.tab.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 
+#define TOKEN(t) (yylval.t = t)
 %}
 %option case-insensitive
 %option array
@@ -14,38 +17,38 @@ DIGITO  [0-9]
 NOCERO  [1-9]
 ENTERO  ({NOCERO}{DIGITO}*)
 %%
-"program"   return PROGRAM;
-"begin"     return PBEGIN;
-"end"       return END;
-"var"       return VAR;
-"const"     return CONST;
-"while"     return WHILE;
-"to"        return TO;
-"then"      return THEN;
-"string"    return TOK_STRING;
-"real"      return TOK_REAL;
-"procedure" return PROCEDURE;
-"or"        return TOK_OR;
-"of"        return OF;
-"not"       return NOT;
-"integer"   return TOK_INTEGER;
-"if"        return IF;
-"function"  return FUNCTION;
-"for"       return FOR;
-"else"      return ELSE;
-"downto"    return DOWNTO;
-"do"        return DO;
-"boolean"   return TOK_BOOLEAN;
-"array"     return ARRAY;
-"and"       return TOK_AND;
+"and"       return TOKEN(TOK_AND);
+"array"     return TOKEN(ARRAY);
+"begin"     return TOKEN(PBEGIN);
+"boolean"   return TOKEN(TOK_BOOLEAN);
+"const"     return TOKEN(CONST);
+"do"        return TOKEN(DO);
+"downto"    return TOKEN(TOK_DOWNTO);
+"else"      return TOKEN(ELSE);
+"end"       return TOKEN(END);
+"for"       return TOKEN(FOR);
+"function"  return TOKEN(FUNCTION);
+"if"        return TOKEN(IF);
+"integer"   return TOKEN(TOK_INTEGER);
+"not"       return TOKEN(NOT);
+"of"        return TOKEN(OF);
+"or"        return TOKEN(TOK_OR);
+"procedure" return TOKEN(PROCEDURE);
+"program"   return TOKEN(PROGRAM);
+"real"      return TOKEN(TOK_REAL);
+"string"    return TOKEN(TOK_STRING);
+"then"      return TOKEN(THEN);
+"to"        return TOKEN(TOK_TO);
+"var"       return TOKEN(VAR);
+"while"     return TOKEN(WHILE);
 
-"writeln"   return WRITELN;
-"write"     return WRITE;
-"readln"    return READLN;
-"read"      return READ;
+"writeln"   return TOKEN(WRITELN);
+"write"     return TOKEN(WRITE);
+"readln"    return TOKEN(READLN);
+"read"      return TOKEN(READ);
 
-".."        return TWO_DOTS;
-":="        return ASSIGNMENT;
+".."        return TOKEN(TWO_DOTS);
+":="        return TOKEN(ASSIGNMENT);
 
 "$"         |
 ">"         |
@@ -65,11 +68,27 @@ ENTERO  ({NOCERO}{DIGITO}*)
 ":"         |
 ";"         |
 ","         |
-"-"         return *yytext;
+"-"         {
+    *((int*)&yylval) = *yytext;
+    return *yytext;
+}
 
-"\""[][#$%&*+,./:;<=>{}[:alnum:][:blank:]-]*"\""    return CADENA;
-{LETRA}({DIGITO}|{LETRA})*  return TOK_IDENTIFICADOR;
-{ENTERO}                    return ENTERO;
+"\""[][#$%&*+,./:;<=>{}[:alnum:][:blank:]-]*"\""    {
+    yylval.CADENA = strdup(yytext);
+    return CADENA;
+};
+{LETRA}({DIGITO}|{LETRA})*  {
+    yylval.TOK_IDENTIFICADOR = strdup(yytext);
+    return TOK_IDENTIFICADOR;
+};
+("+"|"-")?({NOCERO}{DIGITO}*)"."({NOCERO}{DIGITO}*)("e"("+"|"-")?({NOCERO}{DIGITO}*))?  {
+    yylval.REAL = strtod(yytext, NULL);
+    return REAL;
+};
+{ENTERO}                    {
+    yylval.ENTERO = strtol(yytext, NULL, 10);
+    return ENTERO;
+};
 
 [[:blank:]]+    /**/
 \n|\r\n         /**/

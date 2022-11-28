@@ -48,26 +48,7 @@ enum tipo_nodo{
     RELOP_NOT,
     RELOP_PAREN,
     RELOP_EXPRESION_SIMPLE,
-    //NODOS REPETICION INSTRUCCION
-    FOR_ASIGNACION,
 };
-
-enum data_tipo{
-    INTEGER,
-    REAL,
-    STRING,
-    BOOLEAN
-}
-
-enum relop{
-    AND,
-    OR
-}
-
-enum for_tipo{
-    TO,
-    DOWNTO
-}
 
 struct tree_node
 {
@@ -75,14 +56,16 @@ struct tree_node
     char* identificador;
     union
     {
-        enum data_tipo data_tipo;
-        enum for_tipo for_tipo;
+        int tok_val;
         char* cadena;
+        int entero;
+        double real;
     };
 
     struct tree_node * parent, * left_child, * right_sibling;
 };
 
+struct tree_node* tree_make_node();
 void tree_add_child(struct tree_node* parent, struct tree_node* child);
 
 #endif // !TREE_H
