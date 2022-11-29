@@ -55,4 +55,5 @@ add_executable(parser
     parser.tab.c
     lexer.lex.c
     src/tree.c
+    src/hash_map.c
 )
