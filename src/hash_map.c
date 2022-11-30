@@ -1,6 +1,7 @@
 #include "hash_map.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 int hash(char *key)
 {
@@ -67,4 +68,26 @@ list_ptr map_find(list_ptr table[], const struct element item)
         lead = lead->link;
     }
     return NULL;
+}
+
+
+void print_list(list_ptr table[])
+{
+    printf("%s\n", "Hash Table: ");
+    printf("%s\n", "-----------------------------------------------");
+    printf("%s\n", "idx  |KEY  \t|SCOPE\t|SYMB_TYPE");
+    for(int i = 0; i < 131; i++) {
+        list_ptr curr = table[i];
+        if(curr != NULL){
+            printf("\n[%i] |", i);
+            while(curr){
+                struct element temp_item = curr->item;
+                printf("%s \t|", temp_item.key);
+                printf("%ld \t|", temp_item.scope);
+                printf("%i \t|", temp_item.symb_type);
+                curr = curr->link;
+            }
+        }
+    }
+    printf("\n%s\n\n", "-----------------------------------------------");
 }

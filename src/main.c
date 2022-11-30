@@ -24,5 +24,8 @@ int main(int argc, char *argv[])
 
     yyparse();
     print_tree(root);
+
+    print_list(symbol_table);
+
     puts("Entrada válida");
 }

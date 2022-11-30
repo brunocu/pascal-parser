@@ -47,4 +47,6 @@ list_ptr map_insert(list_ptr [], const struct element);
  */
 list_ptr map_find(list_ptr [], const struct element);
 
+void print_list(list_ptr table[]);
+
 #endif // HASH_H
