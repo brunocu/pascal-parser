@@ -1,9 +1,14 @@
+#include <errno.h>
+
 #include "parser.tab.h"
 #include "lexer.lex.h"
 #include "tree.h"
-#include <errno.h>
+#include "hash_map.h"
+
 
 extern struct tree_node* root;
+extern list_ptr symbol_table[];
+
 
 int main(int argc, char *argv[])
 {

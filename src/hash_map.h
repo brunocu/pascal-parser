@@ -1,12 +1,13 @@
 #ifndef HASH_H
 #define HASH_H
 
-#define TABLE_SIZE 131 /* prime number */
+#define TABLE_SIZE 131 /**< prime number */
 
 struct element
 {
     char *key;
     /* data */
+    long scope;
 };
 
 typedef struct list *list_ptr;
@@ -17,21 +18,26 @@ struct list
 };
 
 /**
- * string folding
+ * string folding.
  */
-int hash(const char *);
+int hash(char *);
 
-struct element new_elem(const char *);
+struct element new_elem(char *, const long);
 
 /**
- * chain insert
+ * chain insert.
  *
- * try to insert a new identifier into the table.
+ * Try to insert a new element into the table.
  * @return pointer to the new element of the symbol table
  *  or NULL if the identifier already exists
  */
-struct element *map_insert(list_ptr *, const char *);
+list_ptr map_insert(list_ptr [], const struct element);
 
-struct element *map_find(list_ptr*, const char *);
+/**
+ * Search for element in table.
+ * @return pointer to the element of the symbol table
+ *  if exists or NULL
+ */
+list_ptr map_find(list_ptr [], const struct element);
 
 #endif // HASH_H

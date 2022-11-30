@@ -5,6 +5,9 @@
 #include <errno.h>
 #include <string.h>
 
+/**
+ * Sets and returns the semantic value yylval of the token to the token kind code.
+*/
 #define TOKEN(t) (yylval.t = t)
 %}
 %option case-insensitive
@@ -71,7 +74,7 @@ ENTERO  ({NOCERO}{DIGITO}*)
 "-"         {
     *((int*)&yylval) = *yytext;
     return *yytext;
-}
+};
 
 "\""[][#$%&*+,./:;<=>{}[:alnum:][:blank:]-]*"\""    {
     yylval.CADENA = strdup(yytext);
@@ -92,6 +95,3 @@ ENTERO  ({NOCERO}{DIGITO}*)
 
 [[:blank:]]+    /**/
 \n|\r\n         /**/
-
-%%
-/* User Code */

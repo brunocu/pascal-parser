@@ -1,12 +1,18 @@
-%{
-#include "tree.h"
-#include <stdlib.h>
-#include <stdio.h>
+%code top {
+    #include <stdlib.h>
+    #include <stdio.h>
+}
 
-struct tree_node* root;
-extern int yylex(void);
-int yyerror(char const *s);
-%}
+%code requires {
+    #include "tree.h"
+    #include "hash_map.h"
+}
+
+%code {
+    extern int yylex(void);
+    int yyerror(char const *s);
+}
+
 %define api.value.type union
 %token
 <int>
@@ -97,14 +103,44 @@ int yyerror(char const *s);
     mulop
     signo
 
+%code {
+    struct tree_node* root;
+    list_ptr symbol_table[TABLE_SIZE];
+
+    long max_scope = 0;
+    long last_scope = 0;
+    long curr_scope = 0;
+
+    #define INC_SCOPE() do {        \
+        last_scope = curr_scope;    \
+        curr_scope = ++max_scope;   \
+    } while(0)
+    #define DEC_SCOPE() do {        \
+        curr_scope = last_scope;    \
+    } while(0)
+
+    /**
+     * Try to insert IDENTIFICADOR into symbol table in current scope.
+     * Calls yyerror if duplicated symbol.
+     * 
+     * Uses global variables `symbol_table`, `curr_scope`
+    */
+    void try_table_insert(const char*);
+    void try_table_find(const char*);
+}
+
 %%
 programa:
-    PROGRAM TOK_IDENTIFICADOR '(' identificador_lista ')' ';' declaraciones subprograma_declaraciones instruccion_compuesta '.'
+    PROGRAM TOK_IDENTIFICADOR
+    {
+        /* midrule */
+        try_table_insert($TOK_IDENTIFICADOR);
+    }
+    '(' identificador_lista ')' ';' declaraciones subprograma_declaraciones instruccion_compuesta '.'
     {
         root = tree_make_node();
         root->tipo = PROGRAMA;
-        // TODO SYMBOL TABLE
-        root->identificador = $TOK_IDENTIFICADOR;
+        root->identificador = $TOK_IDENTIFICADOR;   /* scope 0 */
         tree_add_child(root, $identificador_lista);
         tree_add_child(root, $declaraciones);
         tree_add_child(root, $subprograma_declaraciones);
@@ -114,6 +150,8 @@ programa:
 identificador_lista:
     TOK_IDENTIFICADOR
     {
+        try_table_insert($TOK_IDENTIFICADOR);
+
         struct tree_node* id_lista = tree_make_node();
         id_lista->tipo = IDENTIFICADOR_LISTA;
         struct tree_node* identificador_nodo = tree_make_node();
@@ -124,6 +162,8 @@ identificador_lista:
     }
     | identificador_lista ',' TOK_IDENTIFICADOR
     {
+        try_table_insert($TOK_IDENTIFICADOR);
+
         struct tree_node* identificador_nodo = tree_make_node();
         identificador_nodo->tipo = IDENTIFICADOR;
         identificador_nodo->identificador = $TOK_IDENTIFICADOR;
@@ -131,15 +171,10 @@ identificador_lista:
         $$ = $1;
     }
     ;
+/* default rules $$ = $1 */
 declaraciones:
     declaraciones_variables
-    {
-        $$ = $1;
-    }
     | declaraciones_constantes
-    {
-        $$ = $1;
-    }
     ;
 declaraciones_variables:
     declaraciones_variables VAR identificador_lista ':' tipo ';'
@@ -179,7 +214,7 @@ tipo:
         $$ = arr_tipo;
     }
     ;
-/* default token values */
+/* return token values */
 estandar_tipo:
     TOK_INTEGER
     | TOK_REAL
@@ -199,6 +234,8 @@ mulop:
 declaraciones_constantes:
     declaraciones_constantes CONST TOK_IDENTIFICADOR '=' constante_entera ';'
     {
+        try_table_insert($TOK_IDENTIFICADOR);
+
         struct tree_node* dec_const = tree_make_node();
         dec_const->tipo = DECLARACIONES_CONSTANTES;
         dec_const->identificador = $TOK_IDENTIFICADOR;
@@ -208,6 +245,8 @@ declaraciones_constantes:
     }
     | declaraciones_constantes CONST TOK_IDENTIFICADOR '=' constante_real ';'
     {
+        try_table_insert($TOK_IDENTIFICADOR);
+
         struct tree_node* dec_const = tree_make_node();
         dec_const->tipo = DECLARACIONES_CONSTANTES;
         dec_const->identificador = $TOK_IDENTIFICADOR;
@@ -217,6 +256,8 @@ declaraciones_constantes:
     }
     | declaraciones_constantes CONST TOK_IDENTIFICADOR '=' constante_cadena ';'
     {
+        try_table_insert($TOK_IDENTIFICADOR);
+
         struct tree_node* dec_const = tree_make_node();
         dec_const->tipo = DECLARACIONES_CONSTANTES;
         dec_const->identificador = $TOK_IDENTIFICADOR;
@@ -254,10 +295,18 @@ subprograma_declaracion:
         tree_add_child(sub_declaracion, $3);
         tree_add_child(sub_declaracion, $4);
         $$ = sub_declaracion;
+
+        DEC_SCOPE();
     }
     ;
 subprograma_encabezado:
-    FUNCTION TOK_IDENTIFICADOR argumentos ':' estandar_tipo ';'
+    FUNCTION TOK_IDENTIFICADOR
+    {
+        /* midrule */
+        INC_SCOPE();
+        try_table_insert($TOK_IDENTIFICADOR);
+    }
+    argumentos ':' estandar_tipo ';'
     {
         struct tree_node* sub_encabezado = tree_make_node();
         sub_encabezado->identificador = $TOK_IDENTIFICADOR;
@@ -267,16 +316,22 @@ subprograma_encabezado:
         est_tipo->tipo = ESTANDAR_TIPO;
         est_tipo->tok_val = $estandar_tipo;
         
-        tree_add_child(sub_encabezado, $3);
+        tree_add_child(sub_encabezado, $argumentos);
         tree_add_child(sub_encabezado, est_tipo);
         $$ = sub_encabezado;
     }
-    | PROCEDURE TOK_IDENTIFICADOR argumentos ';'
+    | PROCEDURE TOK_IDENTIFICADOR
+    {
+        /* midrule */
+        INC_SCOPE();
+        try_table_insert($TOK_IDENTIFICADOR);
+    }
+    argumentos ';'
     {
         struct tree_node* sub_encabezado = tree_make_node();
         sub_encabezado->identificador = $TOK_IDENTIFICADOR;
         sub_encabezado->tipo = SUBPROGRAMA_ENCABEZADO;
-        tree_add_child(sub_encabezado, $3);        
+        tree_add_child(sub_encabezado, $argumentos);        
         $$ = sub_encabezado;
     }
     ;
@@ -392,6 +447,8 @@ repeticion_instruccion:
 lectura_instruccion:
     READ '(' TOK_IDENTIFICADOR ')'
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* read = tree_make_node();
         read->identificador = $TOK_IDENTIFICADOR;
         read->tipo = LECTURA_INSTRUCCION;
@@ -399,6 +456,8 @@ lectura_instruccion:
     }
     | READLN '(' TOK_IDENTIFICADOR ')'
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* read = tree_make_node();
         read->identificador = $TOK_IDENTIFICADOR;
         read->tipo = LECTURA_INSTRUCCION;
@@ -408,6 +467,8 @@ lectura_instruccion:
 escritura_instruccion:
     WRITE '(' constante_cadena ',' TOK_IDENTIFICADOR ')'
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* write = tree_make_node();
         write->identificador = $TOK_IDENTIFICADOR;
         write->tipo = ESCRITURA_WRITE;
@@ -416,6 +477,8 @@ escritura_instruccion:
     }
     | WRITELN '(' constante_cadena ',' TOK_IDENTIFICADOR ')'
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* writeln = tree_make_node();
         writeln->identificador = $TOK_IDENTIFICADOR;
         writeln->tipo = ESCRITURA_WRITELN;
@@ -498,6 +561,8 @@ for_asignacion:
 variable:
     TOK_IDENTIFICADOR
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* var = tree_make_node();
         var->tipo = VARIABLE;
         var->identificador = $TOK_IDENTIFICADOR;
@@ -505,6 +570,8 @@ variable:
     }
     | TOK_IDENTIFICADOR '[' expresion ']'
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* var = tree_make_node();
         var->tipo = VARIABLE;
         var->identificador = $TOK_IDENTIFICADOR;
@@ -515,6 +582,8 @@ variable:
 procedure_instruccion:
     TOK_IDENTIFICADOR
     {
+        try_table_find($TOK_IDENTIFICADOR);
+        
         struct tree_node* proc = tree_make_node();
         proc->tipo = PROCEDURE_INSTRUCCION;
         proc->identificador = $TOK_IDENTIFICADOR;
@@ -522,6 +591,8 @@ procedure_instruccion:
     }
     | TOK_IDENTIFICADOR '(' expresion_lista ')'
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* proc = tree_make_node();
         proc->tipo = PROCEDURE_INSTRUCCION;
         proc->identificador = $TOK_IDENTIFICADOR;
@@ -643,6 +714,8 @@ llamado_funcion:
 factor:
     TOK_IDENTIFICADOR
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* factor = tree_make_node();
         factor->tipo = FACTOR;
         struct tree_node* identificador_nodo = tree_make_node();
@@ -653,6 +726,8 @@ factor:
     }
     | TOK_IDENTIFICADOR '[' expresion ']'
     {
+        try_table_find($TOK_IDENTIFICADOR);
+
         struct tree_node* factor = tree_make_node();
         factor->tipo = FACTOR;
         struct tree_node* identificador_nodo = tree_make_node();
@@ -708,6 +783,37 @@ constante_real:
     }
     ;
 %%
+
+void try_table_insert(const char *key)
+{
+    struct element item = new_elem(key, curr_scope);
+
+    /* try to insert IDENTIFICADOR into symbol table in current scope */
+    if (!map_insert(symbol_table, item)) {
+        char *msg;
+        asprintf(&msg, "Duplicated symbol:\"%s\"", key);
+        yyerror(msg);
+        YYERROR; /* raise error if duplicated symbol */
+    }
+}
+
+void try_table_find(const char*)
+{
+    struct element item = new_elem(key, curr_scope);
+
+    /* try to find key in current scope */
+    if (!map_find(symbol_table, item)) {
+        /* try to find in global scope */
+        if (curr_scope != 0) {
+            if(map_find(symbol_table, 0))
+                return;
+        }
+        char *msg;
+        asprintf(&msg, "Unknown symbol:\"%s\"", key);
+        yyerror(msg);
+        YYERROR; /* raise error if not found */
+    }
+}
 
 int yyerror(char const *s)
 {

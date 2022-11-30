@@ -3,6 +3,7 @@ project(parser VERSION 0.1.0)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED true)
+add_compile_definitions(__STDC_WANT_LIB_EXT2__=1)
 
 find_program(LEX_EXE
     flex
