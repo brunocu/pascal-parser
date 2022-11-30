@@ -8,6 +8,13 @@ struct element
     char *key;
     /* data */
     long scope;
+    enum {
+        ARREGLO_T = 1 << 0,
+        CONST_T = 1 << 1,
+        PROCEDURE_T = 1 << 2,
+        PROGRAM_T = 1 << 3,
+        VARIABLE_T = 1 << 4
+    } symb_type;
 };
 
 typedef struct list *list_ptr;

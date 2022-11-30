@@ -13,6 +13,7 @@
     int yyerror(char const *s);
 }
 
+%define parse.error detailed
 %define api.value.type union
 %token
 <int>
@@ -124,9 +125,17 @@
      * Calls yyerror if duplicated symbol.
      * 
      * Uses global variables `symbol_table`, `curr_scope`
+     * @return pointer to new list element
     */
-    void try_table_insert(char*);
-    void try_table_find(char*);
+    list_ptr try_table_insert(char*);
+    /**
+     * Try to find IDENTIFICADOR in symbol table in current scope or global scope.
+     * Calls yyerror if not found.
+     * 
+     * Uses global variables `symbol_table`, `curr_scope`
+     * @return pointer to list element
+    */
+    list_ptr try_table_find(char*);
 }
 
 %%
@@ -134,7 +143,8 @@ programa:
     PROGRAM TOK_IDENTIFICADOR
     {
         /* midrule */
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = PROGRAM_T;
     }
     '(' identificador_lista ')' ';' declaraciones subprograma_declaraciones instruccion_compuesta '.'
     {
@@ -150,7 +160,8 @@ programa:
 identificador_lista:
     TOK_IDENTIFICADOR
     {
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = VARIABLE_T;
 
         struct tree_node* id_lista = tree_make_node();
         id_lista->tipo = IDENTIFICADOR_LISTA;
@@ -162,7 +173,8 @@ identificador_lista:
     }
     | identificador_lista ',' TOK_IDENTIFICADOR
     {
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = VARIABLE_T;
 
         struct tree_node* identificador_nodo = tree_make_node();
         identificador_nodo->tipo = IDENTIFICADOR;
@@ -234,7 +246,8 @@ mulop:
 declaraciones_constantes:
     declaraciones_constantes CONST TOK_IDENTIFICADOR '=' constante_entera ';'
     {
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = CONST_T;
 
         struct tree_node* dec_const = tree_make_node();
         dec_const->tipo = DECLARACIONES_CONSTANTES;
@@ -245,7 +258,8 @@ declaraciones_constantes:
     }
     | declaraciones_constantes CONST TOK_IDENTIFICADOR '=' constante_real ';'
     {
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = CONST_T;
 
         struct tree_node* dec_const = tree_make_node();
         dec_const->tipo = DECLARACIONES_CONSTANTES;
@@ -256,7 +270,8 @@ declaraciones_constantes:
     }
     | declaraciones_constantes CONST TOK_IDENTIFICADOR '=' constante_cadena ';'
     {
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = CONST_T;
 
         struct tree_node* dec_const = tree_make_node();
         dec_const->tipo = DECLARACIONES_CONSTANTES;
@@ -304,7 +319,8 @@ subprograma_encabezado:
     {
         /* midrule */
         INC_SCOPE();
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = PROCEDURE_T;
     }
     argumentos ':' estandar_tipo ';'
     {
@@ -324,7 +340,8 @@ subprograma_encabezado:
     {
         /* midrule */
         INC_SCOPE();
-        try_table_insert($TOK_IDENTIFICADOR);
+        list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
+        new_ptr->item.symb_type = PROCEDURE_T;
     }
     argumentos ';'
     {
@@ -447,7 +464,9 @@ repeticion_instruccion:
 lectura_instruccion:
     READ '(' TOK_IDENTIFICADOR ')'
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (find->item.symb_type != VARIABLE_T)
+            yyerror("Unsupported type");
 
         struct tree_node* read = tree_make_node();
         read->identificador = $TOK_IDENTIFICADOR;
@@ -456,7 +475,9 @@ lectura_instruccion:
     }
     | READLN '(' TOK_IDENTIFICADOR ')'
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (find->item.symb_type != VARIABLE_T)
+            yyerror("Unsupported type");
 
         struct tree_node* read = tree_make_node();
         read->identificador = $TOK_IDENTIFICADOR;
@@ -467,7 +488,9 @@ lectura_instruccion:
 escritura_instruccion:
     WRITE '(' constante_cadena ',' TOK_IDENTIFICADOR ')'
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (!(find->item.symb_type & (VARIABLE_T | CONST_T)))
+            yyerror("Unsupported type");
 
         struct tree_node* write = tree_make_node();
         write->identificador = $TOK_IDENTIFICADOR;
@@ -477,7 +500,9 @@ escritura_instruccion:
     }
     | WRITELN '(' constante_cadena ',' TOK_IDENTIFICADOR ')'
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (!(find->item.symb_type & (VARIABLE_T | CONST_T)))
+            yyerror("Unsupported type");
 
         struct tree_node* writeln = tree_make_node();
         writeln->identificador = $TOK_IDENTIFICADOR;
@@ -561,7 +586,9 @@ for_asignacion:
 variable:
     TOK_IDENTIFICADOR
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (find->item.symb_type != VARIABLE_T)
+            yyerror("Unsupported type");
 
         struct tree_node* var = tree_make_node();
         var->tipo = VARIABLE;
@@ -570,7 +597,9 @@ variable:
     }
     | TOK_IDENTIFICADOR '[' expresion ']'
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (find->item.symb_type != ARREGLO_T)
+            yyerror("Unsupported type");
 
         struct tree_node* var = tree_make_node();
         var->tipo = VARIABLE;
@@ -582,7 +611,9 @@ variable:
 procedure_instruccion:
     TOK_IDENTIFICADOR
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (find->item.symb_type != PROCEDURE_T)
+            yyerror("Unsupported type");
         
         struct tree_node* proc = tree_make_node();
         proc->tipo = PROCEDURE_INSTRUCCION;
@@ -591,7 +622,9 @@ procedure_instruccion:
     }
     | TOK_IDENTIFICADOR '(' expresion_lista ')'
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (find->item.symb_type != PROCEDURE_T)
+            yyerror("Unsupported type");
 
         struct tree_node* proc = tree_make_node();
         proc->tipo = PROCEDURE_INSTRUCCION;
@@ -610,12 +643,6 @@ relop_expresion:
         $$ = relop;
     }
     | relop_and
-    {
-        struct tree_node* relop = tree_make_node();
-        relop->tipo = RELOP_EXPRESION;
-        tree_add_child(relop, $relop_and);
-        $$ = relop;
-    }
     ;
 relop_and:
     relop_and TOK_AND relop_not
@@ -627,12 +654,6 @@ relop_and:
         $$ = relop;
     }
     | relop_not
-    {
-        struct tree_node* relop = tree_make_node();
-        relop->tipo = RELOP_AND;
-        tree_add_child(relop, $relop_not);
-        $$ = relop;
-    }
     ;
 relop_not:
     NOT relop_not
@@ -714,7 +735,9 @@ llamado_funcion:
 factor:
     TOK_IDENTIFICADOR
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (!(find->item.symb_type & (VARIABLE_T | CONST_T)))
+            yyerror("Unsupported type");
 
         struct tree_node* factor = tree_make_node();
         factor->tipo = FACTOR;
@@ -726,7 +749,9 @@ factor:
     }
     | TOK_IDENTIFICADOR '[' expresion ']'
     {
-        try_table_find($TOK_IDENTIFICADOR);
+        list_ptr find = try_table_find($TOK_IDENTIFICADOR);
+        if (find->item.symb_type != ARREGLO_T)
+            yyerror("Unsupported type");
 
         struct tree_node* factor = tree_make_node();
         factor->tipo = FACTOR;
@@ -784,33 +809,41 @@ constante_real:
     ;
 %%
 
-void try_table_insert(char *key)
+list_ptr try_table_insert(char *key)
 {
     struct element item = new_elem(key, curr_scope);
 
     /* try to insert IDENTIFICADOR into symbol table in current scope */
-    if (!map_insert(symbol_table, item)) {
+    list_ptr elem_ptr = map_insert(symbol_table, item);
+    if (!elem_ptr) {
         char *msg;
         asprintf(&msg, "Duplicated symbol:\"%s\"", key);
         yyerror(msg);
     }
+    return elem_ptr;
 }
 
-void try_table_find(char* key)
+list_ptr try_table_find(char* key)
 {
     struct element item = new_elem(key, curr_scope);
 
     /* try to find key in current scope */
-    if (!map_find(symbol_table, item)) {
+    list_ptr find = map_find(symbol_table, item);
+    if (!find) {
         /* try to find in global scope */
         if (curr_scope != 0) {
-            item.scope = curr_scope;
-            if(map_find(symbol_table, item))
-                return;
+            item.scope = 0;
+            find = map_find(symbol_table, item);
+            if(find)
+                return find;
         }
         char *msg;
         asprintf(&msg, "Unknown symbol:\"%s\"", key);
         yyerror(msg);
+    }
+    else
+    {
+        return find;
     }
 }
 
