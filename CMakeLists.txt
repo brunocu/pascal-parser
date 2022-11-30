@@ -25,7 +25,7 @@ MACRO(LEX_FILE _filepath)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.h
-        COMMAND ${LEX_EXE} -L
+        COMMAND ${LEX_EXE}
                 --header-file=${_filename}.h
                 -o${_filename}.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filepath}
@@ -57,4 +57,5 @@ add_executable(parser
     lexer.lex.c
     src/tree.c
     src/hash_map.c
+    src/codegen.c
 )

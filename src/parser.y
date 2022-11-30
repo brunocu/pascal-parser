@@ -318,9 +318,9 @@ subprograma_encabezado:
     FUNCTION TOK_IDENTIFICADOR
     {
         /* midrule */
-        INC_SCOPE();
         list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
         new_ptr->item.symb_type = PROCEDURE_T;
+        INC_SCOPE();
     }
     argumentos ':' estandar_tipo ';'
     {
@@ -339,9 +339,9 @@ subprograma_encabezado:
     | PROCEDURE TOK_IDENTIFICADOR
     {
         /* midrule */
-        INC_SCOPE();
         list_ptr new_ptr = try_table_insert($TOK_IDENTIFICADOR);
         new_ptr->item.symb_type = PROCEDURE_T;
+        INC_SCOPE();
     }
     argumentos ';'
     {
@@ -741,10 +741,7 @@ factor:
 
         struct tree_node* factor = tree_make_node();
         factor->tipo = FACTOR;
-        struct tree_node* identificador_nodo = tree_make_node();
-        identificador_nodo->tipo = IDENTIFICADOR;
-        identificador_nodo->identificador = $TOK_IDENTIFICADOR;
-        tree_add_child(factor, identificador_nodo);
+        factor->identificador = $TOK_IDENTIFICADOR;
         $$ = factor;
     }
     | TOK_IDENTIFICADOR '[' expresion ']'
@@ -755,10 +752,7 @@ factor:
 
         struct tree_node* factor = tree_make_node();
         factor->tipo = FACTOR;
-        struct tree_node* identificador_nodo = tree_make_node();
-        identificador_nodo->tipo = IDENTIFICADOR;
-        identificador_nodo->identificador = $TOK_IDENTIFICADOR;
-        tree_add_child(factor, identificador_nodo);
+        factor->identificador = $TOK_IDENTIFICADOR;
         tree_add_child(factor, $3);
         $$ = factor;
     }
@@ -792,9 +786,9 @@ constante_entera:
         struct tree_node* int_const = tree_make_node();
         int_const->tipo = CONSTANTE_ENTERA;
         if ($1 == '-')
-            int_const->tok_val = - $2;
+            int_const->entero = - $2;
         else
-            int_const->tok_val = $2;
+            int_const->entero = $2;
         $$ = int_const;
     }
     ;

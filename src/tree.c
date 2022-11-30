@@ -11,6 +11,7 @@ struct tree_node *tree_make_node()
     new_node->parent = NULL;
     new_node->left_child = NULL;
     new_node->right_sibling = NULL;
+    new_node->tok_val = 0;
     return new_node;
 }
 

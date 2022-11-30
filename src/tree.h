@@ -51,6 +51,7 @@ enum tipo_nodo{
     RELOP_EXPRESION_SIMPLE,
 };
 
+typedef struct tree_node *tree_ptr;
 struct tree_node
 {
     enum tipo_nodo tipo;

@@ -14,6 +14,7 @@
 %option array
 %option noyywrap
 %option nodefault
+/* %option debug */
 
 LETRA   [A-Za-z]
 DIGITO  [0-9]
