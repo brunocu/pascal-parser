@@ -125,8 +125,8 @@
      * 
      * Uses global variables `symbol_table`, `curr_scope`
     */
-    void try_table_insert(const char*);
-    void try_table_find(const char*);
+    void try_table_insert(char*);
+    void try_table_find(char*);
 }
 
 %%
@@ -784,7 +784,7 @@ constante_real:
     ;
 %%
 
-void try_table_insert(const char *key)
+void try_table_insert(char *key)
 {
     struct element item = new_elem(key, curr_scope);
 
@@ -793,11 +793,10 @@ void try_table_insert(const char *key)
         char *msg;
         asprintf(&msg, "Duplicated symbol:\"%s\"", key);
         yyerror(msg);
-        YYERROR; /* raise error if duplicated symbol */
     }
 }
 
-void try_table_find(const char*)
+void try_table_find(char* key)
 {
     struct element item = new_elem(key, curr_scope);
 
@@ -805,13 +804,13 @@ void try_table_find(const char*)
     if (!map_find(symbol_table, item)) {
         /* try to find in global scope */
         if (curr_scope != 0) {
-            if(map_find(symbol_table, 0))
+            item.scope = curr_scope;
+            if(map_find(symbol_table, item))
                 return;
         }
         char *msg;
         asprintf(&msg, "Unknown symbol:\"%s\"", key);
         yyerror(msg);
-        YYERROR; /* raise error if not found */
     }
 }
 
