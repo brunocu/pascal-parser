@@ -1,5 +1,6 @@
 #ifndef TREE_H
 #define TREE_H
+#include <stdbool.h>
 
 enum tipo_nodo{
     EMPTY,
@@ -67,5 +68,8 @@ struct tree_node
 
 struct tree_node* tree_make_node();
 void tree_add_child(struct tree_node* parent, struct tree_node* child);
+void print_tree(struct tree_node* root);
+char* get_text_from_enum(int idx);
+void showNodes (const char* padding, char* pointer, struct tree_node* node, bool rightSibling);
 
 #endif // !TREE_H
